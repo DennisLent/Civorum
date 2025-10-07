@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-map = { path = "crates/map", features = ["worldgen"] }
-bevy = { version = "0.14", optional = true }
+map = { path = "crates/map" }
+bevy = { version = "0.16" }
 
 [workspace]
 members = [
@@ -13,7 +13,3 @@ members = [
     "crates/map",
 ]
 resolver = "2"
-
-[features]
-default = []
-gui = ["dep:bevy"]

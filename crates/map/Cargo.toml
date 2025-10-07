@@ -3,12 +3,4 @@ name = "map"
 version = "0.1.0"
 edition = "2024"
 description = "Hex map primitives and utilities for Civorum."
-license = "MIT OR Apache-2.0"
-
-[dependencies]
-
-[features]
-default = []
-# When enabled, exposes `Tile`, terrain enums and simple worldgen utilities,
-# plus a `type Map = HexMap<Tile>` alias for convenience.
-worldgen = []
+license = "MIT"

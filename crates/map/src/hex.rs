@@ -3,7 +3,14 @@ pub const SIZE: i32 = 50;
 
 /// Six axial directions in a flat‑top layout
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum Direction { E, NE, NW, W, SW, SE }
+pub enum Direction {
+    E,
+    NE,
+    NW,
+    W,
+    SW,
+    SE,
+}
 
 /// Axial hex coordinate (q, r)
 /// We are using Flattt-top orientation and and even-r horizontal layout
@@ -16,7 +23,9 @@ pub struct Hex {
 
 impl Hex {
     /// Create a new axial coordinate
-    pub fn new(q: i32, r: i32) -> Self { Self { q, r } }
+    pub fn new(q: i32, r: i32) -> Self {
+        Self { q, r }
+    }
 
     /// Return the value of q
     pub fn q(&self) -> i32 {
@@ -61,11 +70,17 @@ impl Hex {
 }
 
 pub fn hex_add(a: Hex, b: Hex) -> Hex {
-    Hex { q: a.q + b.q, r: a.r + b.r }
+    Hex {
+        q: a.q + b.q,
+        r: a.r + b.r,
+    }
 }
 
 pub fn hex_subtract(a: Hex, b: Hex) -> Hex {
-    Hex { q: a.q - b.q, r: a.r - b.r }
+    Hex {
+        q: a.q - b.q,
+        r: a.r - b.r,
+    }
 }
 
 pub fn hex_length(hex: Hex) -> i32 {
