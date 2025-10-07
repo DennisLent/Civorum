@@ -1,2 +1,3 @@
 # Civorum
-A tile-based civ-like 4X game for agent simulations in Rust
+
+A deterministic, ECS-driven, hex-tiled 3D 4X simulator. This workspace contains a minimal, compilable skeleton organized for modularity, replayability, and moddability.
