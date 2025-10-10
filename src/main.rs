@@ -1,4 +1,4 @@
-use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
+use std::f32::consts::{FRAC_PI_2, FRAC_PI_3, FRAC_PI_4};
 
 use bevy::input::mouse::{MouseMotion, MouseWheel};
 use bevy::math::prelude::EulerRot;
@@ -9,8 +9,6 @@ use map::{Hex, Map, MapSize, SIZE};
 const WINDOW_WIDTH: f32 = 1400.0;
 const WINDOW_HEIGHT: f32 = 900.0;
 const WINDOW_MARGIN: f32 = 0.9;
-// Nudge to reduce subpixel cracks between separate hex meshes during rasterization.
-const TILE_PACKING: f32 = 0.9985;
 
 struct CliOptions {
     gui: bool,
@@ -160,6 +158,7 @@ fn setup(
 ) {
     let map = &map_res.0;
     let positions: Vec<Vec2> = map.tiles().iter().copied().map(axial_to_world).collect();
+    println!("{:?}", positions);
 
     if positions.is_empty() {
         commands.spawn((Camera3d::default(), Msaa::Sample4, Transform::default()));
@@ -241,7 +240,7 @@ fn orbit_camera_controls(
         if buttons.pressed(MouseButton::Right) {
             camera.yaw -= mouse_delta.x * 0.005;
             camera.pitch += mouse_delta.y * 0.005;
-            camera.pitch = camera.pitch.clamp(-FRAC_PI_4 * 3.0, FRAC_PI_4 * 3.0);
+            camera.pitch = camera.pitch.clamp(-FRAC_PI_2 * 3.0, FRAC_PI_2 * 3.0);
         }
 
         if scroll_delta.abs() > f32::EPSILON {
@@ -291,8 +290,8 @@ fn axial_to_world(hex: Hex) -> Vec2 {
     let q = hex.q() as f32;
     let r = hex.r() as f32;
     let size = hex_radius();
-    let x = size * 1.5 * q * TILE_PACKING;
-    let y = size * (3.0_f32).sqrt() * (r + q / 2.0) * TILE_PACKING;
+    let x = size * 1.5 * q;
+    let y = size * (3.0_f32).sqrt() * (r + q / 2.0);
 
     Vec2::new(x, y)
 }

@@ -2,7 +2,6 @@ use std::fmt;
 use std::str::FromStr;
 
 pub mod hex;
-
 pub use hex::{Hex, SIZE, direction_vector};
 
 /// Possible high-level map sizes with fixed grid dimensions.
