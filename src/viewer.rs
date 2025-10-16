@@ -11,21 +11,15 @@ use bevy::render::{
     settings::{RenderCreation, WgpuSettings},
     RenderPlugin,
 };
-use hexx::{
-    shapes, Hex, HexLayout, HexOrientation, MeshInfo, PlaneMeshBuilder, Vec2 as HVec2,
-    Vec3 as HVec3,
-};
-use map::{MapSize, SIZE};
+use hexx::{MeshInfo, PlaneMeshBuilder, Vec2 as HVec2, Vec3 as HVec3};
+use map::Map;
 
 const WINDOW_WIDTH: f32 = 1400.0;
 const WINDOW_HEIGHT: f32 = 900.0;
 const WINDOW_MARGIN: f32 = 0.9;
 
-#[derive(Resource, Clone, Copy)]
-struct GridDims {
-    width: u32,
-    height: u32,
-}
+#[derive(Resource, Clone)]
+struct MapRes(Map);
 
 #[derive(Component)]
 struct OrbitCamera {
@@ -37,9 +31,8 @@ struct OrbitCamera {
     pitch: f32,
 }
 
-pub fn run_gui(size: MapSize) {
-    let (width, height) = size.dimensions();
-    let title = format!("Civorum – {} map", size);
+pub fn run_gui(map: Map) {
+    let title = format!("Civorum – {} map", map.size());
 
     App::new()
         .add_plugins((
@@ -67,7 +60,7 @@ pub fn run_gui(size: MapSize) {
             global: false,
             default_color: Color::BLACK.into(),
         })
-        .insert_resource(GridDims { width, height })
+        .insert_resource(MapRes(map))
         .add_systems(Startup, setup)
         .add_systems(Update, orbit_camera_controls)
         .run();
@@ -77,31 +70,14 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    dims: Res<GridDims>,
+    map: Res<MapRes>,
 ) {
-    // Build a layout for flat-top hexes. We'll scale and center later.
-    let layout = HexLayout {
-        orientation: HexOrientation::Flat,
-        origin: HVec2::ZERO,
-        scale: HVec2::splat(SIZE as f32),
-        ..Default::default()
-    };
-
-    // Generate axial coordinates in an even-q rectangle
-    let tiles: Vec<Hex> = shapes::flat_rectangle([
-        0,
-        dims.width as i32 - 1,
-        0,
-        dims.height as i32 - 1,
-    ])
-    .collect();
+    let map = &map.0;
+    let layout = map.layout();
+    let tiles = map.tiles().to_vec();
 
     // Compute world centers, bounding box and fit scale
-    let centers: Vec<HVec2> = tiles
-        .iter()
-        .map(|&h| layout.hex_to_world_pos(h))
-        .collect();
-
+    let centers: Vec<HVec2> = tiles.iter().map(|&h| layout.hex_to_world_pos(h)).collect();
     let Some((min, max)) = bounding_box(&centers) else {
         commands.spawn((Camera3d::default(), Msaa::Sample4, Transform::default()));
         return;
@@ -133,8 +109,8 @@ fn setup(
         commands.spawn((
             Mesh3d(handle),
             MeshMaterial3d(material.clone()),
-            // Each plane already sits flat; rotate so Y is up in Bevy
-            Transform::from_rotation(Quat::from_rotation_x(-FRAC_PI_2)),
+            // Plane faces +Y; no rotation needed
+            Transform::default(),
             Wireframe, // Edge overlay for boundaries
             Name::new(format!("hex-{i}")),
         ));
@@ -150,13 +126,14 @@ fn setup(
         Transform::from_rotation(Quat::from_euler(EulerRot::XYZ, FRAC_PI_4, FRAC_PI_4, 0.0)),
     ));
 
-    let max_extent = span.length().max((SIZE as f32) * 4.0) * scale;
-    let distance = (max_extent * 0.75).max((SIZE as f32) * 10.0);
+    let base = map.rect_size().x.max(map.rect_size().y);
+    let max_extent = span.length().max(base * 4.0) * scale;
+    let distance = (max_extent * 0.75).max(base * 10.0);
 
     let camera = OrbitCamera {
         target: Vec3::ZERO,
         distance,
-        min_distance: (SIZE as f32) * scale,
+        min_distance: base * scale,
         max_distance: distance * 4.0,
         yaw: -FRAC_PI_4,
         pitch: FRAC_PI_4,
@@ -186,17 +163,20 @@ fn orbit_camera_controls(
     }
 
     for (mut camera, mut transform) in &mut query {
+        // Rotate with right mouse
         if buttons.pressed(MouseButton::Right) {
             camera.yaw -= mouse_delta.x * 0.005;
             camera.pitch += mouse_delta.y * 0.005;
-            camera.pitch = camera.pitch.clamp(-FRAC_PI_2 * 3.0, FRAC_PI_2 * 3.0);
+            camera.pitch = camera.pitch.clamp(-FRAC_PI_2 * 0.99, FRAC_PI_2 * 0.99);
         }
 
+        // Zoom with wheel
         if scroll_delta.abs() > f32::EPSILON {
             let s = 1.0 - scroll_delta * 0.1;
             camera.distance = (camera.distance * s).clamp(camera.min_distance, camera.max_distance);
         }
 
+        // Pan with WASD/Arrows
         let mut pan_input = Vec3::ZERO;
         if keys.pressed(KeyCode::KeyW) || keys.pressed(KeyCode::ArrowUp) {
             pan_input.z -= 1.0;
@@ -209,6 +189,15 @@ fn orbit_camera_controls(
         }
         if keys.pressed(KeyCode::KeyD) || keys.pressed(KeyCode::ArrowRight) {
             pan_input.x += 1.0;
+        }
+
+        // Pan with middle mouse drag
+        if buttons.pressed(MouseButton::Middle) {
+            // Convert screen delta to world movement at current yaw
+            let rotation = Quat::from_rotation_y(camera.yaw);
+            // Scale movement by distance for consistent feel
+            let movement = rotation * Vec3::new(-mouse_delta.x, 0.0, mouse_delta.y) * 0.005 * camera.distance;
+            camera.target += Vec3::new(movement.x, 0.0, movement.z);
         }
 
         if pan_input.length_squared() > 0.0 {

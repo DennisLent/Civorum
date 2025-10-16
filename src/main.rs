@@ -2,6 +2,7 @@ mod viewer;
 mod cli;
 
 use cli::parse_cli;
+use map::Map;
 
 fn main() {
     let options = parse_cli().unwrap_or_else(|err| {
@@ -9,11 +10,16 @@ fn main() {
         std::process::exit(1);
     });
 
+    let map = Map::new(options.size);
+
     if options.gui {
-        viewer::run_gui(options.size);
+        viewer::run_gui(map);
+    } else {
+        println!("map size: {}", map.size());
+        println!("map width: {}", map.width());
+        println!("map height: {}", map.height());
     }
 }
-
 
 
 
