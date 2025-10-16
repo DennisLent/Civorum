@@ -11,8 +11,8 @@ build-dir = "build"
 [output.html]
 default-theme = "light"
 preferred-dark-theme = "navy"
-curly-quotes = true
-git-repository-url = ""
+smart-punctuation = true
+git-repository-url = "https://github.com/DennisLent/Civorum"
 site-url = "/"
 additional-css = []
 additional-js = []
