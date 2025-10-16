@@ -1,5 +1,6 @@
 mod viewer;
 mod cli;
+mod camera;
 
 use cli::parse_cli;
 use map::Map;
@@ -20,6 +21,5 @@ fn main() {
         println!("map height: {}", map.height());
     }
 }
-
 
 
