@@ -11,7 +11,7 @@ fn main() {
         std::process::exit(1);
     });
 
-    let map = Map::new(options.size);
+    let map = Map::generate(options.size, options.seed, options.kind);
 
     if options.gui {
         viewer::run_gui(map, options.seed);
@@ -21,4 +21,3 @@ fn main() {
         println!("map height: {}", map.height());
     }
 }
-

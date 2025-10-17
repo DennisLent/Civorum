@@ -6,7 +6,7 @@ use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::render::{render_resource::{WgpuFeatures}, settings::{RenderCreation, WgpuSettings}, RenderPlugin};
 use bevy::render::camera::{PerspectiveProjection, Projection};
 use hexx::{Vec2 as HVec2};
-use map::Map;
+use map::{Map, Terrain};
 
 const WINDOW_WIDTH: f32 = 1400.0;
 const WINDOW_HEIGHT: f32 = 900.0;
@@ -80,27 +80,22 @@ fn setup(
     );
 
     // Load terrain models (glb scenes) and compute scale to fit hex diameter
-    let model_names = [
-        "water",
-        "stone-mountain",
-        "sand-desert",
-        "grass-hill",
-        "grass-forest",
-        "grass",
-    ];
-    let models: Vec<Handle<Scene>> = model_names
-        .iter()
-        .map(|n| asset_server.load(format!("models/{}.glb#Scene0", n)))
-        .collect();
+    let models = TerrainModels {
+        water: asset_server.load("models/water.glb#Scene0"),
+        water_deep: asset_server.load("models/deep-water.glb#Scene0"),
+        stone_mountain: asset_server.load("models/stone-mountain.glb#Scene0"),
+        sand_desert: asset_server.load("models/sand-desert.glb#Scene0"),
+        grass_hill: asset_server.load("models/grass-hill.glb#Scene0"),
+        grass_forest: asset_server.load("models/grass-forest.glb#Scene0"),
+        grass: asset_server.load("models/grass.glb#Scene0"),
+    };
     let scale = map.scale_for_model_diameter(MODEL_DIAMETER_M);
-    let models_for_spawn = models;
 
     let seed = seed.0;
-    for (i, hex) in tiles.into_iter().enumerate() {
+    for (i, cell) in map.cells().iter().enumerate() {
+        let hex = *cell.hex();
         let pos = layout.hex_to_world_pos(hex);
-        let idx = pick_index(hex, seed, 6);
-        let scene = models_for_spawn[idx].clone();
-        let scale = scale;
+        let scene = handle_for_terrain(&models, map, cell.terrain(), hex, seed).clone();
         // Rotate pointy-top assets by 30° around Y to match our flat-top layout
         let transform = Transform::from_xyz(pos.x, 0.0, pos.y)
             .with_rotation(Quat::from_rotation_y(FRAC_PI_6))
@@ -111,13 +106,8 @@ fn setup(
             .id();
         if i < 5 {
             println!(
-                "viewer: tile[{i}] hex=({},{}) world=({:.2},{:.2}) -> model={} entity={:?}",
-                hex.x(),
-                hex.y(),
-                pos.x,
-                pos.y,
-                idx,
-                entity
+                "viewer: tile[{i}] hex=({},{}) world=({:.2},{:.2}) terrain={:?} entity={:?}",
+                hex.x(), hex.y(), pos.x, pos.y, cell.terrain(), entity
             );
         }
     }
@@ -197,4 +187,42 @@ fn pick_index(hex: hexx::Hex, seed: u64, count: usize) -> usize {
     z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
     let v = z ^ (z >> 31);
     (v as usize) % count.max(1)
+}
+
+#[derive(Clone)]
+struct TerrainModels {
+    water: Handle<Scene>,
+    water_deep: Handle<Scene>,
+    stone_mountain: Handle<Scene>,
+    sand_desert: Handle<Scene>,
+    grass_hill: Handle<Scene>,
+    grass_forest: Handle<Scene>,
+    grass: Handle<Scene>,
+}
+
+fn handle_for_terrain<'a>(models: &'a TerrainModels, map: &Map, t: &Terrain, hex: hexx::Hex, seed: u64) -> &'a Handle<Scene> {
+    match t {
+        Terrain::Water => {
+            if is_deep_water(map, hex) { &models.water_deep } else { &models.water }
+        }
+        Terrain::Mountain => &models.stone_mountain,
+        Terrain::Desert => &models.sand_desert,
+        Terrain::Forest => &models.grass_forest,
+        Terrain::Grass => &models.grass
+    }
+}
+
+fn is_deep_water(map: &Map, hex: hexx::Hex) -> bool {
+    let mut count = 0;
+    for n in map.neighbors(hex) {
+        count += 1;
+        if let Some(idx) = map.axial_to_index(n) {
+            if map.cells()[idx].terrain() != &Terrain::Water {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    count == 6
 }

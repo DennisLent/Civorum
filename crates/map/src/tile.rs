@@ -2,6 +2,7 @@ use hexx::Hex;
 
 use crate::terrain::Terrain;
 
+#[derive(Debug, Clone)]
 pub struct Tile {
     hex: Hex,
     terrain: Terrain

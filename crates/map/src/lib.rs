@@ -1,9 +1,13 @@
 mod map_sizes;
 mod parser;
-mod terrain;
-mod tile;
+mod r#gen;
+pub mod terrain;
+pub mod tile;
 
 pub use map_sizes::MapSize;
+pub use r#gen::MapKind;
+pub use terrain::Terrain;
+pub use tile::Tile;
 
 use hexx::{conversions::OffsetHexMode, Hex, HexLayout, HexOrientation, Vec2};
 
@@ -16,7 +20,8 @@ pub struct Map {
     size: MapSize,
     width: u32,
     height: u32,
-    tiles: Vec<Hex>,
+    tiles: Vec<Hex>,          // axial coordinates (grid)
+    cells: Vec<Tile>,         // per‑tile data (aligned with tiles)
 }
 
 impl Map {
@@ -26,11 +31,13 @@ impl Map {
     pub fn new(size: MapSize) -> Self {
         let (width, height) = size.dimensions();
         let tiles = generate_odd_q_hexes(width, height);
+        let cells = tiles.iter().copied().map(|h| Tile::new(h, Terrain::Grass)).collect();
         Self {
             size,
             width,
             height,
             tiles,
+            cells,
         }
     }
 
@@ -52,6 +59,11 @@ impl Map {
     /// All axial tile coordinates in row‑major order (row 0..h, col 0..w).
     pub fn tiles(&self) -> &[Hex] {
         &self.tiles
+    }
+
+    /// All tile data in row‑major order (aligned with `tiles()`).
+    pub fn cells(&self) -> &[Tile] {
+        &self.cells
     }
 
     /// Convert axial -> (col,row) in odd‑q and return linear index if in‑bounds.
@@ -148,6 +160,17 @@ impl Map {
         let d = self.hex_diameter();
         if model_diameter <= 0.0 { 1.0 } else { d / model_diameter }
     }
+
+    /// Generate a map with tile data using the provided seed and kind.
+    pub fn generate(size: MapSize, seed: u64, kind: MapKind) -> Self {
+        let (width, height) = size.dimensions();
+        let tiles = generate_odd_q_hexes(width, height);
+        let cells = match kind {
+            MapKind::Continents => r#gen::generate_continents(&tiles, seed),
+        };
+
+        Self { size, width, height, tiles, cells }
+    }
 }
 
 fn generate_odd_q_hexes(width: u32, height: u32) -> Vec<Hex> {
@@ -164,3 +187,5 @@ fn generate_odd_q_hexes(width: u32, height: u32) -> Vec<Hex> {
     }
     tiles
 }
+
+// Generation logic moved to `gen` module.

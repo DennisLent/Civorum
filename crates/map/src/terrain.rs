@@ -4,7 +4,7 @@ pub enum Terrain {
     Mountain,
     Desert,
     Grass,
-    Forrest
+    Forest
 }
 
 impl Terrain {
@@ -13,7 +13,7 @@ impl Terrain {
         match self {
             Terrain::Water => "water.glb",
             Terrain::Desert => "sand.glb",
-            Terrain::Forrest => "grass-forest.glb",
+            Terrain::Forest => "grass-forest.glb",
             Terrain::Grass => "grass.glb",
             Terrain::Mountain => "stone-mountain.glb"
         }

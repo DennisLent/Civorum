@@ -1,9 +1,11 @@
 use map::MapSize;
+use map::MapKind;
 
 pub struct CliOptions {
     pub gui: bool,
     pub size: MapSize,
     pub seed: u64,
+    pub kind: MapKind,
 }
 
 
@@ -11,6 +13,7 @@ pub fn parse_cli() -> Result<CliOptions, String> {
     let mut gui = false;
     let mut size: Option<MapSize> = None;
     let mut seed: Option<u64> = None;
+    let mut kind: Option<MapKind> = None;
 
     let mut args = std::env::args().skip(1);
 
@@ -33,6 +36,12 @@ pub fn parse_cli() -> Result<CliOptions, String> {
                 })?;
                 seed = Some(parse_seed(&value)?);
             }
+            "--map" | "-m" => {
+                let value = args.next().ok_or_else(|| {
+                    format!("Expected a map kind after '{}'.", arg)
+                })?;
+                kind = Some(parse_kind(&value)?);
+            }
             "--help" | "-h" => {
                 print_usage();
                 std::process::exit(0);
@@ -42,6 +51,8 @@ pub fn parse_cli() -> Result<CliOptions, String> {
                     size = Some(parse_size(value)?);
                 } else if let Some(value) = arg.strip_prefix("--seed=") {
                     seed = Some(parse_seed(value)?);
+                } else if let Some(value) = arg.strip_prefix("--map=") {
+                    kind = Some(parse_kind(value)?);
                 } else {
                     return Err(format!(
                         "Unknown argument '{}'. Use --help to see supported options.",
@@ -54,11 +65,13 @@ pub fn parse_cli() -> Result<CliOptions, String> {
 
     // If no seed provided, derive a random-ish seed from system time and pid
     let seed = seed.unwrap_or_else(random_seed);
+    let kind = kind.unwrap_or(MapKind::Continents);
 
     Ok(CliOptions {
         gui,
         size: size.unwrap_or(MapSize::Standard),
         seed,
+        kind,
     })
 }
 
@@ -76,6 +89,12 @@ fn parse_seed(value: &str) -> Result<u64, String> {
     value
         .parse::<u64>()
         .map_err(|_| format!("Invalid seed '{}': expected an unsigned integer", value))
+}
+
+fn parse_kind(value: &str) -> Result<MapKind, String> {
+    value
+        .parse::<MapKind>()
+        .map_err(|_| "invalid map kind (use 'continents')".to_string())
 }
 
 fn random_seed() -> u64 {
@@ -97,11 +116,12 @@ fn random_seed() -> u64 {
 
 fn print_usage() {
     println!(
-        "Usage: cargo run [--gui] [--size <{}>] [--seed <u64>]",
+        "Usage: cargo run [--gui] [--size <{}>] [--seed <u64>] [--map <continents>]",
         MapSize::NAMES.join("|")
     );
     println!("\nExamples:");
     println!("  cargo run -- --size standard");
     println!("  cargo run -- --gui --size huge");
     println!("  cargo run -- --gui --seed 123456789");
+    println!("  cargo run -- --gui --map continents");
 }
