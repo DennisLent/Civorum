@@ -14,12 +14,11 @@ fn main() {
     let map = Map::new(options.size);
 
     if options.gui {
-        viewer::run_gui(map);
+        viewer::run_gui(map, options.seed);
     } else {
         println!("map size: {}", map.size());
         println!("map width: {}", map.width());
         println!("map height: {}", map.height());
     }
 }
-
 

@@ -51,7 +51,7 @@ pub fn orbit_camera_controls(
         if scroll_delta.abs() > f32::EPSILON {
             let s = 1.0 - scroll_delta * 0.1;
             camera.distance = (camera.distance * s).clamp(camera.min_distance, camera.max_distance);
-            println!("{}", camera.distance);
+            // println!("{}", camera.distance);
         }
 
         // Pan with WASD/Arrows

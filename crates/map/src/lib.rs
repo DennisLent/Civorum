@@ -1,5 +1,7 @@
 mod map_sizes;
 mod parser;
+mod terrain;
+mod tile;
 
 pub use map_sizes::MapSize;
 
@@ -108,6 +110,43 @@ impl Map {
     /// Size of the bounding rectangle of a single hex for this map's layout.
     pub fn rect_size(&self) -> Vec2 {
         self.layout().rect_size()
+    }
+
+    /// Hex circumradius in world units (distance from center to vertex).
+    ///
+    /// For flat‑top orientation, `rect_size().x == 2 * circumradius` and
+    /// `rect_size().y == √3 * circumradius` (see hexx docs).
+    pub fn hex_circumradius(&self) -> f32 {
+        // For flat‑top, layout.scale.x == R when scale is isotropic
+        self.layout().scale.x
+    }
+
+    /// Hex apothem in world units (distance from center to edge).
+    /// For flat‑top orientation, `apothem = √3/2 * R = rect_size().y / 2`.
+    pub fn hex_apothem(&self) -> f32 {
+        self.rect_size().y * 0.5
+    }
+
+    /// Hex diameter in world units (vertex‑to‑vertex width) for flat‑top.
+    pub fn hex_diameter(&self) -> f32 {
+        self.rect_size().x
+    }
+
+    /// Uniform scale factor to fit a 3D model whose unit is a circumradius.
+    ///
+    /// If your model was authored such that a circumradius of `model_r` maps to 1.0
+    /// world unit in the DCC tool, this returns the uniform scale `s` you should apply
+    /// to match the current hex layout size: `s = R_world / model_r`.
+    pub fn scale_for_model_circumradius(&self, model_r: f32) -> f32 {
+        let r = self.hex_circumradius();
+        if model_r <= 0.0 { 1.0 } else { r / model_r }
+    }
+
+    /// Uniform scale factor to fit a model authored with a vertex‑to‑vertex diameter.
+    /// Returns `s = diameter_world / model_diameter`.
+    pub fn scale_for_model_diameter(&self, model_diameter: f32) -> f32 {
+        let d = self.hex_diameter();
+        if model_diameter <= 0.0 { 1.0 } else { d / model_diameter }
     }
 }
 

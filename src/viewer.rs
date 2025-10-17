@@ -1,26 +1,25 @@
-use std::f32::consts::{FRAC_PI_2, FRAC_PI_4};
+use std::f32::consts::{FRAC_PI_4, FRAC_PI_6};
 
 use bevy::math::prelude::EulerRot;
 use bevy::prelude::*;
-use bevy::pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin};
-use bevy::render::{
-    mesh::Indices,
-    render_asset::RenderAssetUsages,
-    render_resource::{PrimitiveTopology, WgpuFeatures},
-    settings::{RenderCreation, WgpuSettings},
-    RenderPlugin,
-};
+use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
+use bevy::render::{render_resource::{WgpuFeatures}, settings::{RenderCreation, WgpuSettings}, RenderPlugin};
 use bevy::render::camera::{PerspectiveProjection, Projection};
-use hexx::{MeshInfo, PlaneMeshBuilder, Vec2 as HVec2};
+use hexx::{Vec2 as HVec2};
 use map::Map;
 
 const WINDOW_WIDTH: f32 = 1400.0;
 const WINDOW_HEIGHT: f32 = 900.0;
+const MODEL_DIAMETER_M: f32 = 1.1547; // measured vertex-to-vertex diameter
 
 #[derive(Resource, Clone)]
 struct MapRes(Map);
 
-pub fn run_gui(map: Map) {
+#[derive(Resource, Clone, Copy)]
+struct TerrainSeed(pub u64);
+
+
+pub fn run_gui(map: Map, seed: u64) {
     let title = format!("Civorum – {} map", map.size());
 
     App::new()
@@ -50,6 +49,7 @@ pub fn run_gui(map: Map) {
             default_color: Color::BLACK.into(),
         })
         .insert_resource(MapRes(map))
+        .insert_resource(TerrainSeed(seed))
         .add_systems(Startup, setup)
         .add_systems(Update, camera::orbit_camera_controls)
         .run();
@@ -57,9 +57,10 @@ pub fn run_gui(map: Map) {
 
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    // 3D assets are glTF scenes; no procedural meshes/materials needed here
+    asset_server: Res<AssetServer>,
     map: Res<MapRes>,
+    seed: Res<TerrainSeed>,
 ) {
     let map = &map.0;
     let layout = map.layout();
@@ -78,41 +79,46 @@ fn setup(
         tiles.len(), rect.x, rect.y, min.x, min.y, max.x, max.y, center.x, center.y, span.x, span.y
     );
 
-    // Material: disable culling so tiles are visible even if the camera goes below the plane
-    let mut mat = StandardMaterial::from(Color::srgb(0.3, 0.65, 0.55));
-    mat.cull_mode = None;
-    let material = materials.add(mat);
+    // Load terrain models (glb scenes) and compute scale to fit hex diameter
+    let model_names = [
+        "water",
+        "stone-mountain",
+        "sand-desert",
+        "grass-hill",
+        "grass-forest",
+        "grass",
+    ];
+    let models: Vec<Handle<Scene>> = model_names
+        .iter()
+        .map(|n| asset_server.load(format!("models/{}.glb#Scene0", n)))
+        .collect();
+    let scale = map.scale_for_model_diameter(MODEL_DIAMETER_M);
+    let models_for_spawn = models;
 
+    let seed = seed.0;
     for (i, hex) in tiles.into_iter().enumerate() {
         let pos = layout.hex_to_world_pos(hex);
-        // Build a hex plane mesh at `hex`. Layout handles size and position.
-        let info: MeshInfo = PlaneMeshBuilder::new(&layout).at(hex).build();
+        let idx = pick_index(hex, seed, 6);
+        let scene = models_for_spawn[idx].clone();
+        let scale = scale;
+        // Rotate pointy-top assets by 30° around Y to match our flat-top layout
+        let transform = Transform::from_xyz(pos.x, 0.0, pos.y)
+            .with_rotation(Quat::from_rotation_y(FRAC_PI_6))
+            .with_scale(Vec3::splat(scale));
+
+        let entity = commands
+            .spawn((SceneRoot(scene), transform, Name::new(format!("hex-{i}"))))
+            .id();
         if i < 5 {
             println!(
-                "viewer: tile[{i}] hex=({},{}) world=({:.2},{:.2}) verts={} tris={}",
+                "viewer: tile[{i}] hex=({},{}) world=({:.2},{:.2}) -> model={} entity={:?}",
                 hex.x(),
                 hex.y(),
                 pos.x,
                 pos.y,
-                info.vertices.len(),
-                info.indices.len() / 3
+                idx,
+                entity
             );
-        }
-        let mesh = mesh_from_info(info);
-        let handle = meshes.add(mesh);
-
-        let entity = commands
-            .spawn((
-                Mesh3d(handle.clone()),
-                MeshMaterial3d(material.clone()),
-                // Plane faces +Y; no rotation needed
-                Transform::default(),
-                Wireframe, // Edge overlay for boundaries
-                Name::new(format!("hex-{i}")),
-            ))
-            .id();
-        if i < 5 {
-            println!("viewer: spawned entity {:?} with mesh handle {:?}", entity, handle);
         }
     }
 
@@ -183,14 +189,12 @@ fn bounding_box(points: &[HVec2]) -> Option<(HVec2, HVec2)> {
 
 // No longer fitting to window; layout controls hex scale. Camera centers on bounds.
 
-fn mesh_from_info(info: MeshInfo) -> Mesh {
-    let positions: Vec<[f32; 3]> = info.vertices.into_iter().map(|v| [v.x, v.y, v.z]).collect();
-    let normals: Vec<[f32; 3]> = info.normals.into_iter().map(|n| [n.x, n.y, n.z]).collect();
-    let uvs: Vec<[f32; 2]> = info.uvs.into_iter().map(|uv| [uv.x, uv.y]).collect();
-
-    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::RENDER_WORLD)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-        .with_inserted_indices(Indices::U16(info.indices))
+fn pick_index(hex: hexx::Hex, seed: u64, count: usize) -> usize {
+    let mut z = seed
+        ^ ((hex.x() as i64 as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15))
+        ^ ((hex.y() as i64 as u64).wrapping_mul(0xBF58_476D_1CE4_E5B9));
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    let v = z ^ (z >> 31);
+    (v as usize) % count.max(1)
 }
