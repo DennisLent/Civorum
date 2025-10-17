@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy::pbr::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::render::{render_resource::{WgpuFeatures}, settings::{RenderCreation, WgpuSettings}, RenderPlugin};
 use bevy::render::camera::{PerspectiveProjection, Projection};
-use hexx::{Vec2 as HVec2};
+use hexx::{Vec2 as HVec2, conversions::OffsetHexMode, HexOrientation};
 use map::{Map, Terrain};
 
 const WINDOW_WIDTH: f32 = 1400.0;
@@ -51,7 +51,7 @@ pub fn run_gui(map: Map, seed: u64) {
         .insert_resource(MapRes(map))
         .insert_resource(TerrainSeed(seed))
         .add_systems(Startup, setup)
-        .add_systems(Update, camera::orbit_camera_controls)
+        .add_systems(Update, (camera::orbit_camera_controls, toggle_wireframe, update_hover_ui))
         .run();
 }
 
@@ -85,9 +85,11 @@ fn setup(
         water_deep: asset_server.load("models/deep-water.glb#Scene0"),
         stone_mountain: asset_server.load("models/stone-mountain.glb#Scene0"),
         sand_desert: asset_server.load("models/sand-desert.glb#Scene0"),
+        sand: asset_server.load("models/sand.glb#Scene0"),
         grass_hill: asset_server.load("models/grass-hill.glb#Scene0"),
         grass_forest: asset_server.load("models/grass-forest.glb#Scene0"),
         grass: asset_server.load("models/grass.glb#Scene0"),
+        snow: asset_server.load("models/snow.glb#Scene0"),
     };
     let scale = map.scale_for_model_diameter(MODEL_DIAMETER_M);
 
@@ -111,6 +113,21 @@ fn setup(
             );
         }
     }
+
+    // Hover UI text
+    let ui_entity = commands
+        .spawn((
+            Text::new("Hover a tile..."),
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(8.0),
+                left: Val::Px(8.0),
+                ..Default::default()
+            },
+            HoverUi,
+        ))
+        .id();
+    commands.insert_resource(HoverText(ui_entity));
 
     // Light
     commands.spawn((
@@ -195,9 +212,11 @@ struct TerrainModels {
     water_deep: Handle<Scene>,
     stone_mountain: Handle<Scene>,
     sand_desert: Handle<Scene>,
+    sand: Handle<Scene>,
     grass_hill: Handle<Scene>,
     grass_forest: Handle<Scene>,
     grass: Handle<Scene>,
+    snow: Handle<Scene>,
 }
 
 fn handle_for_terrain<'a>(models: &'a TerrainModels, map: &Map, t: &Terrain, hex: hexx::Hex, seed: u64) -> &'a Handle<Scene> {
@@ -206,9 +225,10 @@ fn handle_for_terrain<'a>(models: &'a TerrainModels, map: &Map, t: &Terrain, hex
             if is_deep_water(map, hex) { &models.water_deep } else { &models.water }
         }
         Terrain::Mountain => &models.stone_mountain,
-        Terrain::Desert => &models.sand_desert,
+        Terrain::Desert => &models.sand,
         Terrain::Forest => &models.grass_forest,
-        Terrain::Grass => &models.grass
+        Terrain::Grass => &models.grass,
+        Terrain::Snow => &models.snow,
     }
 }
 
@@ -225,4 +245,46 @@ fn is_deep_water(map: &Map, hex: hexx::Hex) -> bool {
         }
     }
     count == 6
+}
+#[derive(Resource, Clone, Copy)]
+struct HoverText(Entity);
+
+#[derive(Component)]
+struct HoverUi;
+
+fn toggle_wireframe(keys: Res<ButtonInput<KeyCode>>, mut cfg: ResMut<WireframeConfig>) {
+    if keys.just_pressed(KeyCode::Space) {
+        cfg.global = !cfg.global;
+    }
+}
+
+fn update_hover_ui(
+    windows: Query<&Window, With<bevy::window::PrimaryWindow>>,
+    cameras: Query<(&Camera, &GlobalTransform), With<Camera3d>>,
+    map: Res<MapRes>,
+    mut layout_cache: Local<Option<hexx::HexLayout>>, // cache to avoid recompute
+    mut qtext: Query<&mut Text, With<HoverUi>>,
+) {
+    let window = match windows.get_single() { Ok(w) => w, Err(_) => return };
+    let (camera, cam_xform) = match cameras.get_single() { Ok(v) => v, Err(_) => return };
+    let cursor = match window.cursor_position() { Some(p) => p, None => return };
+    let Ok(ray) = camera.viewport_to_world(cam_xform, cursor) else { return };
+    if ray.direction.y.abs() < 1e-5 { return; }
+    let t = -ray.origin.y / ray.direction.y;
+    if t.is_nan() || t.is_infinite() { return; }
+    let world = ray.origin + ray.direction * t;
+
+    let mapref = &map.0;
+    let layout = layout_cache.get_or_insert_with(|| mapref.layout());
+    let hex = layout.world_pos_to_hex(HVec2::new(world.x, world.z));
+    let [col, row] = hex.to_offset_coordinates(OffsetHexMode::Odd, HexOrientation::Flat);
+    if let Some(idx) = mapref.axial_to_index(hex) {
+        let tile = &mapref.cells()[idx];
+        if let Ok(mut text) = qtext.get_single_mut() {
+            *text = Text::new(format!(
+                "Tile col={}, row={} | elev={:.2} temp={:.2} rain={:.2} | {:?}",
+                col, row, tile.elevation(), tile.temperature(), tile.rainfall(), tile.terrain()
+            ));
+        }
+    }
 }

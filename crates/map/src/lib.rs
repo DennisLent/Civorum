@@ -31,7 +31,11 @@ impl Map {
     pub fn new(size: MapSize) -> Self {
         let (width, height) = size.dimensions();
         let tiles = generate_odd_q_hexes(width, height);
-        let cells = tiles.iter().copied().map(|h| Tile::new(h, Terrain::Grass)).collect();
+        let cells = tiles
+            .iter()
+            .copied()
+            .map(|h| Tile::new(h, Terrain::Grass, 0.0, 0.0, 0.0))
+            .collect();
         Self {
             size,
             width,
@@ -166,7 +170,7 @@ impl Map {
         let (width, height) = size.dimensions();
         let tiles = generate_odd_q_hexes(width, height);
         let cells = match kind {
-            MapKind::Continents => r#gen::generate_continents(&tiles, seed),
+            MapKind::Continents => r#gen::generate_continents(&tiles, seed, height),
         };
 
         Self { size, width, height, tiles, cells }

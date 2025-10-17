@@ -4,7 +4,8 @@ pub enum Terrain {
     Mountain,
     Desert,
     Grass,
-    Forest
+    Forest,
+    Snow,
 }
 
 impl Terrain {
@@ -15,7 +16,8 @@ impl Terrain {
             Terrain::Desert => "sand.glb",
             Terrain::Forest => "grass-forest.glb",
             Terrain::Grass => "grass.glb",
-            Terrain::Mountain => "stone-mountain.glb"
+            Terrain::Mountain => "stone-mountain.glb",
+            Terrain::Snow => "snow.glb",
         }
     }
 }
