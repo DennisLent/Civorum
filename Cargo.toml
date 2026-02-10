@@ -4,13 +4,3 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-map = { path = "crates/map" }
-bevy = { version = "0.16" }
-hexx = "0.22.0"
-
-[workspace]
-members = [
-    ".",
-    "crates/map",
-]
-resolver = "2"
