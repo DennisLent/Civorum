@@ -1,9 +1,9 @@
-use crate::map_components::{resources::ResourceType, terrain::{Feature, Terrain}, yields::Yields};
+use crate::map_components::{hex_coords::HexCoord, resources::ResourceType, terrain::{Feature, Terrain}, yields::Yields};
 
 /// Base implementation of a tile, that hold all the main information about the raw state, yields and appeal.
 pub struct Tile {
     // coordinations
-    hex_coords: (i32, i32),
+    hex_coords: HexCoord,
     // tile information
     base_terrain: Terrain,
     feature: Option<Feature>,
