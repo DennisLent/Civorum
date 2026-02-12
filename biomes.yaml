@@ -1,0 +1,33 @@
+terrain:
+  mountain_threshold: 0.05
+  hill_threshold: 0.2
+  snow_temp_threshold: 40
+  tundra_temp_threshold: 85
+  desert_temp_threshold: 150
+  desert_rain_threshold: 85
+  grassland_rain_threshold: 155
+
+landmasses:
+  base_factor: 16
+  base_land_percent: 75
+  fuzzy_flip_percent: 10
+  coast_island_percent: 15
+  smoothing_passes: 2
+
+temperature:
+  continental_octaves: 4
+  continental_scale: 120.0
+  detail_octaves: 5
+  detail_scale: 35.0
+  continental_weight: 0.7
+  detail_weight: 0.3
+  base_amplitude: 0.18
+  latitude_amp_floor: 0.5
+
+rainfall:
+  octaves: 5
+  scale: 60.0
+
+heightmap:
+  octaves: 5
+  scale: 1
