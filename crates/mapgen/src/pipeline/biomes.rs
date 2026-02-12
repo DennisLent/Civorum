@@ -155,7 +155,12 @@ fn generate_random_255(seed: u64, size: &MapSizes) -> Vec<u8> {
 fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usize, usize)> {
     let p = y & 1;
 
-    let candidates: [(usize, usize); 6] = if p == 0 {
+    let x = x as isize;
+    let y = y as isize;
+    let width = width as isize;
+    let height = height as isize;
+
+    let candidates: [(isize, isize); 6] = if p == 0 {
         // even row
         [
             (x, y - 1),
@@ -189,7 +194,7 @@ fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usiz
             continue;
         }
 
-        out.push((nx, ny));
+        out.push((nx as usize, ny as usize));
     }
 
     out
@@ -208,7 +213,7 @@ fn ocean_mask(landmasses: &Vec<u8>, size: &MapSizes) -> Vec<bool> {
         for y in [0, height - 1] {
             let idx = y * width + x;
             if landmasses[idx] == 0 && !ocean[idx] {
-                ocean[idx] == true;
+                ocean[idx] = true;
                 queue.push_back((x, y));
             }
         }

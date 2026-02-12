@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 civorum-mapgen = { path = "../mapgen" }
+image = "0.25"
