@@ -1,6 +1,6 @@
 [book]
 title = "Civorum"
-description = "A deterministic, ECS-driven, hex-tiled 3D 4X simulator"
+description = "A deterministic, hex-tiled 3D 4X simulator"
 language = "en"
 multilingual = false
 
@@ -20,4 +20,3 @@ no-section-label = false
 
 [output.html.search]
 enable = true
-
