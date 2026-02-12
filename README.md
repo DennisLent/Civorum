@@ -1,6 +1,6 @@
 # Civorum
 
-Civorum is now a CLI/TUI-first project. This repository has been reset to a minimal Rust CLI skeleton as a clean starting point.
+Civorum is a deterministic, hex-tiled 3D 4X simulator.
 
 ## Run
 

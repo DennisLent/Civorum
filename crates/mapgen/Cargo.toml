@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 rand_chacha = "0.10.0"
 noise = "0.9"
+itertools = "0.14.0"

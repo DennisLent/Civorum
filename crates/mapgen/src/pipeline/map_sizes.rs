@@ -5,7 +5,7 @@ pub enum MapSizes {
     Small,
     Standard,
     Large,
-    Huge
+    Huge,
 }
 
 impl MapSizes {
@@ -17,7 +17,7 @@ impl MapSizes {
             Self::Small => (74, 46),
             Self::Standard => (84, 54),
             Self::Large => (96, 60),
-            Self::Huge => (106, 66)
+            Self::Huge => (106, 66),
         }
     }
 
@@ -26,10 +26,10 @@ impl MapSizes {
         match self {
             Self::Duel => 44 * 26,
             Self::Tiny => 60 * 38,
-            Self::Small => 74 *46,
+            Self::Small => 74 * 46,
             Self::Standard => 84 * 54,
             Self::Large => 96 * 60,
-            Self::Huge => 106 * 66
+            Self::Huge => 106 * 66,
         }
     }
 }
