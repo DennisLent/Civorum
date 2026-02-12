@@ -35,7 +35,7 @@ impl HexCoord{
     }
 
     /// Return the coordinate of the neighbor in a given direction
-    pub fn neighbor(&self, direction: CompassDirection) -> HexCoord {
+    pub fn neighbor(&self, direction: &CompassDirection) -> HexCoord {
         let p = self.y & 1;
         if p == 0{
             match direction {
@@ -53,9 +53,16 @@ impl HexCoord{
                 CompassDirection::SE => HexCoord::new(self.x + 1, self.y + 1),
                 CompassDirection::SW => HexCoord::new(self.x, self.y + 1),
                 CompassDirection::W => HexCoord::new(self.x - 1, self.y),
-                CompassDirection:: NW => HexCoord::new(self.x, self.y - 1)
+                CompassDirection::NW => HexCoord::new(self.x, self.y - 1)
             }
         }
+    }
+
+    /// Return all 6 hex neighbors of a given tile.
+    /// This returns a vector and tiles are arranged in the order NE, E, Se, SW, W, NW
+    pub fn neighbors(&self) -> Vec<HexCoord> {
+        let directions = [CompassDirection::NE, CompassDirection::E, CompassDirection::SE, CompassDirection::SW, CompassDirection::W, CompassDirection::NW];
+        directions.iter().map(|dir| self.neighbor(dir)).collect()
     }
 }
 

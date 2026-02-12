@@ -22,5 +22,4 @@ pub struct Tile {
     climate: i32,
     // tile improvements todo
     owner: Option<String>
-
 }
