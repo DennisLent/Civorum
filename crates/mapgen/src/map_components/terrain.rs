@@ -1,3 +1,5 @@
+use crate::map_components::yields::Yields;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 /// The types of base terrain that exist in the game.
 /// All five terrain types have their Hill variants, where the hill denotes a difference in relief.
@@ -12,6 +14,20 @@ pub enum Terrain {
     CoastLake,
     Ocean,
     Mountain,
+}
+
+impl Terrain {
+
+    pub fn base_yields(&self) -> Yields {
+        match self {
+            Self::Plains => Yields::new(1, 1, 0, 0, 0, 0, 0),
+            Self::Grassland => Yields::new(2, 1, 0, 0, 0, 0, 0),
+            Self::Tundra => Yields::new(1, 0, 0, 0, 0, 0, 0),
+            Self::CoastLake => Yields::new(1, 0, 1, 0, 0, 0, 0),
+            Self::Ocean => Yields::new(1, 0, 0, 0, 0, 0, 0),
+            _ => Yields::new(0, 0, 0, 0, 0, 0, 0)
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

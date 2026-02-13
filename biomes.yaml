@@ -4,8 +4,8 @@ terrain:
   snow_temp_threshold: 40
   tundra_temp_threshold: 85
   desert_temp_threshold: 150
-  desert_rain_threshold: 85
-  grassland_rain_threshold: 155
+  desert_rain_threshold: 100
+  grassland_rain_threshold: 120
 
 landmasses:
   base_factor: 16
@@ -16,9 +16,9 @@ landmasses:
 
 temperature:
   continental_octaves: 4
-  continental_scale: 120.0
+  continental_scale: 100.0
   detail_octaves: 5
-  detail_scale: 35.0
+  detail_scale: 25.0
   continental_weight: 0.7
   detail_weight: 0.3
   base_amplitude: 0.18
@@ -26,8 +26,8 @@ temperature:
 
 rainfall:
   octaves: 5
-  scale: 60.0
+  scale: 50.0
 
 heightmap:
   octaves: 5
-  scale: 1
+  scale: 5
