@@ -32,4 +32,21 @@ impl MapSizes {
             Self::Huge => 106 * 66,
         }
     }
+
+    /// Duel: 2
+    /// Tiny: 3
+    /// Small: 3
+    /// Standard: 4
+    /// Large: 5
+    /// Huge: 6
+    pub fn number_rivers(&self) -> usize{
+        match self {
+            Self::Duel => 2,
+            Self::Tiny => 3,
+            Self::Small => 3,
+            Self::Standard => 4,
+            Self::Large => 5,
+            Self::Huge => 6
+        }
+    }
 }

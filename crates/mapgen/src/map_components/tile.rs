@@ -1,5 +1,5 @@
 use crate::map_components::{
-    hex_coords::HexCoord,
+    hex_coords::{CompassDirection, HexCoord},
     resources::ResourceType,
     terrain::{Feature, Terrain},
     yields::Yields,
@@ -16,8 +16,7 @@ pub struct Tile {
     passable: bool,
     yields: Yields,
     // rivers and water
-    river: bool,
-    river_edge: Option<i32>,
+    river_edges: u8,
     freshwater: bool,
     ocean_acces: bool,
     // map related information

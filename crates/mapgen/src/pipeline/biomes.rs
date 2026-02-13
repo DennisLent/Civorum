@@ -362,7 +362,7 @@ fn generate_random_255(seed: u64, size: &MapSizes, noise_config: &NoiseConfig) -
 
 /// Helper function for Odd-r neighbors for pointy-top hexes
 /// Returns only in-bounds neighbors
-fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usize, usize)> {
+pub fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usize, usize)> {
     let p = y & 1;
 
     let x = x as isize;
@@ -412,6 +412,7 @@ fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usiz
 
 /// Returns a mask where true is ocean
 /// Assumes landmask of 1 = land & 0 = water.
+/// This will only mark the oceans and the lakes, coastal tiles need to be marked separately
 fn ocean_mask(landmasses: &Vec<u8>, size: &MapSizes) -> Vec<bool> {
     let (width, height) = size.dimensions();
     let mut ocean = vec![false; size.grid_size()];
@@ -443,6 +444,33 @@ fn ocean_mask(landmasses: &Vec<u8>, size: &MapSizes) -> Vec<bool> {
     ocean
 }
 
+/// Function to mark the coastal tiles i.e. "ocean" tiles with at least one land neighbor
+fn coastal_water_mask(landmasses: &[u8], ocean: &[bool], size: &MapSizes) -> Vec<bool> {
+    let (width, height) = size.dimensions();
+    let mut coast = vec![false; width * height];
+
+    for y in 0..height {
+        for x in 0..width {
+            let idx = y * width + x;
+
+            // only ocean water can be coast
+            if landmasses[idx] != 0 || !ocean[idx] {
+                continue;
+            }
+
+            // if any neighbor is land mark as coast
+            if neighbors_odd_r(x, y, width, height)
+                .into_iter()
+                .any(|(nx, ny)| landmasses[ny * width + nx] == 1)
+            {
+                coast[idx] = true;
+            }
+        }
+    }
+
+    coast
+}
+
 /// Assign terrains based on the landmasses, temperature, rainfall and heightmap
 /// Returns (Vec<Terrain>, Vec<bool>) for terrain and defining hills
 fn assign_terrain(
@@ -460,7 +488,7 @@ fn assign_terrain(
     // Create histogram of heights (only on land)
     let mut height_histogram = [0u32; 256];
     let mut land_count = 0;
-    for (i, value) in landmasses.iter().enumerate() {
+    for (i, _) in landmasses.iter().enumerate() {
         if landmasses[i] == 1 {
             height_histogram[heightmap[i] as usize] += 1;
             land_count += 1;
@@ -499,6 +527,7 @@ fn assign_terrain(
     // **********************
 
     let ocean_mask = ocean_mask(&landmasses, &size);
+    let coast_mask = coastal_water_mask(&landmasses, &ocean_mask, &size);
 
     // **************
     // ** Terrains **
@@ -508,41 +537,55 @@ fn assign_terrain(
     let mut terrain_vec = Vec::with_capacity(n);
     let mut hill_vec = Vec::with_capacity(n);
 
-    for (l, o, h, t, r) in izip!(landmasses, ocean_mask, heightmap, temperature, rainfall) {
-        // oceans
-        if *l == 0 {
-            terrain_vec.push(if o {
-                Terrain::Ocean
-            } else {
+    for i in 0..n {
+        let l = landmasses[i];
+        
+        //water
+        if l == 0{
+            let o = ocean_mask[i];
+
+            let is_coast = coast_mask[i];
+            let is_lake = !o;
+
+            terrain_vec.push(if is_lake || is_coast {
                 Terrain::CoastLake
+            } else {
+                Terrain::Ocean
             });
             hill_vec.push(false);
             continue;
         }
 
-        if h >= &k_mountains {
+        // hills
+        let h = heightmap[i];
+        if h >= k_mountains {
             terrain_vec.push(Terrain::Mountain);
             hill_vec.push(false);
             continue;
         }
 
-        let is_hill = h >= &k_hills;
+        let is_hill = h >= k_hills;
         hill_vec.push(is_hill);
 
-        let terrain = if t <= &terrain_cfg.snow_temp_threshold {
+
+        let t = temperature[i];
+        let r = rainfall[i];
+        let terrain = if t <= terrain_cfg.snow_temp_threshold {
             Terrain::Snow
-        } else if t <= &terrain_cfg.tundra_temp_threshold {
+        } else if t <= terrain_cfg.tundra_temp_threshold {
             Terrain::Tundra
-        } else if t >= &terrain_cfg.desert_temp_threshold && r <= &terrain_cfg.desert_rain_threshold
+        } else if t >= terrain_cfg.desert_temp_threshold && r <= terrain_cfg.desert_rain_threshold
         {
             Terrain::Desert
-        } else if r >= &terrain_cfg.grassland_rain_threshold {
+        } else if r >= terrain_cfg.grassland_rain_threshold {
             Terrain::Grassland
         } else {
             Terrain::Plains
         };
 
         terrain_vec.push(terrain);
+
+
     }
 
     (terrain_vec, hill_vec)
