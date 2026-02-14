@@ -593,8 +593,8 @@ fn assign_terrain(
 
 /// Creates landmasses, temperature, rainfall, height and ocean masks for the map.
 /// Assigns the respective terrains to each tile
-/// Returns a vec for the terrain, hills, temperatire and rain
-pub fn generate_map(seed: &u64, size: &MapSizes) -> (Vec<Terrain>, Vec<bool>, Vec<u8>, Vec<u8>) {
+/// Returns a vec for the terrain, height, hills, temperatire and rain
+pub fn generate_map(seed: &u64, size: &MapSizes) -> (Vec<Terrain>, Vec<u8>, Vec<bool>, Vec<u8>, Vec<u8>) {
     let config = biomes_config();
     let land_seed = seed.clone();
     let land = generate_landmasses(land_seed, size);
@@ -610,5 +610,5 @@ pub fn generate_map(seed: &u64, size: &MapSizes) -> (Vec<Terrain>, Vec<bool>, Ve
 
     let (terrain_vec, hill_vec) = assign_terrain(&land, &temp, &rain, &height, size);
 
-    (terrain_vec, hill_vec, temp, rain)
+    (terrain_vec, height, hill_vec, temp, rain)
 }

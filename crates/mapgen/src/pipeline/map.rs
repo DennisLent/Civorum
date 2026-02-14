@@ -1,6 +1,6 @@
 use crate::{
     map_components::{terrain::Terrain, tile::Tile},
-    pipeline::{biomes::generate_map, map_sizes::MapSizes},
+    pipeline::{biomes::generate_map, features::place_features, map_sizes::MapSizes},
 };
 
 /// Map struct that holds all tiles as well as information about itself
@@ -20,7 +20,7 @@ impl Map {
         };
 
         // Create basic landmasses and Terrains
-        let (terrain_vec, hill_vec, temp, rain) = generate_map(&internal_seed, &size);
+        let (terrain_vec, height, hill_vec, temp, rain) = generate_map(&internal_seed, &size);
 
         todo!()
     }
@@ -32,7 +32,9 @@ impl Map {
         };
 
         // Create basic landmasses and Terrains
-        let (terrain_vec, hill_vec, temp, rain) = generate_map(&internal_seed, &size);
+        let (terrain_vec, height, hill_vec, temp, rain) = generate_map(&internal_seed, &size);
+
+        let _ = place_features(&terrain_vec, &rain, &height, &size);
 
         (terrain_vec, hill_vec)
     }
