@@ -1,7 +1,7 @@
 use std::{env, io, path::PathBuf};
 
 use civorum_core::render_debug_map;
-use civorum_mapgen::pipeline::map_sizes::MapSizes;
+use civorum_mapgen::pipeline::{map_sizes::MapSizes, map_types::MapTypes};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
@@ -30,8 +30,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(invalid_input)?
         .unwrap_or(Some(12));
 
-    let cell_px = args
+    let map_type = args
         .get(3)
+        .map(String::as_str)
+        .map(parse_map_type)
+        .transpose()
+        .map_err(invalid_input)?
+        .unwrap_or(MapTypes::Continents);
+
+    let cell_px = args
+        .get(4)
         .map(String::as_str)
         .map(parse_cell_px)
         .transpose()
@@ -39,11 +47,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or(16);
 
     let out_path = args
-        .get(4)
+        .get(5)
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("out/debug_map.png"));
 
-    render_debug_map(seed, size, cell_px, &out_path)?;
+    render_debug_map(seed, size, map_type, cell_px, &out_path)?;
     println!("Wrote {}", out_path.display());
 
     Ok(())
@@ -52,12 +60,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn print_usage() {
     println!("Usage:");
     println!(
-        "  cargo run -p civorum-core --bin render_debug_map -- [size] [seed|none] [cell_px] [out_path]"
+        "  cargo run -p civorum-core --bin render_debug_map -- [size] [seed|none] [map_type] [cell_px] [out_path]"
     );
     println!("Defaults:");
-    println!("  size=standard seed=12 cell_px=16 out_path=out/debug_map.png");
+    println!(
+        "  size=standard seed=12 map_type=continents cell_px=16 out_path=out/debug_map.png"
+    );
     println!("Sizes:");
     println!("  duel tiny small standard large huge");
+    println!("Map types:");
+    println!("  continents small_continents islands_continents pangea mirror terra");
 }
 
 fn parse_size(value: &str) -> Result<MapSizes, String> {
@@ -97,6 +109,20 @@ fn parse_cell_px(value: &str) -> Result<u32, String> {
     }
 
     Ok(parsed)
+}
+
+fn parse_map_type(value: &str) -> Result<MapTypes, String> {
+    match value.to_ascii_lowercase().as_str() {
+        "continents" => Ok(MapTypes::Continents),
+        "small_continents" | "small-continents" => Ok(MapTypes::SmallContinents),
+        "islands_continents" | "islands-continents" => Ok(MapTypes::IslandsContinents),
+        "pangea" => Ok(MapTypes::Pangea),
+        "mirror" => Ok(MapTypes::Mirror),
+        "terra" => Ok(MapTypes::Terra),
+        _ => Err(format!(
+            "invalid map_type '{value}'. Use one of: continents, small_continents, islands_continents, pangea, mirror, terra"
+        )),
+    }
 }
 
 fn invalid_input(message: String) -> io::Error {

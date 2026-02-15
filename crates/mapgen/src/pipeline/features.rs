@@ -1,6 +1,9 @@
 use itertools::Itertools;
 
-use crate::{map_components::{terrain::Terrain}, pipeline::{biomes::neighbors_odd_r, map_sizes::MapSizes}};
+use crate::{
+    map_components::terrain::Terrain,
+    pipeline::{helpers::neighbors_odd_r, map_sizes::MapSizes},
+};
 
 /// Find potential spots at which a river can start and end
 /// Good river starts are areas with high rainfall. We assign a score to them based on height as well to score them later

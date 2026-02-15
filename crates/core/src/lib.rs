@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use civorum_mapgen::pipeline::{map::Map, map_sizes::MapSizes};
+use civorum_mapgen::pipeline::{map::Map, map_sizes::MapSizes, map_types::MapTypes};
 
 pub mod debug_render;
 
@@ -9,13 +9,14 @@ pub use debug_render::render_map_png;
 pub fn render_debug_map(
     seed: Option<u64>,
     size: MapSizes,
+    map_type: MapTypes,
     cell_px: u32,
     out_path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let (width, height) = size.dimensions();
     let panic_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(|_| {}));
-    let terrain_result = std::panic::catch_unwind(|| Map::debug_terrains(seed, size));
+    let terrain_result = std::panic::catch_unwind(|| Map::debug_terrains(seed, size, map_type));
     std::panic::set_hook(panic_hook);
     let (terrain_vec, hill_vec) = terrain_result.map_err(|_| {
         "map generation panicked while building debug terrain data (check mapgen biome indexing)"

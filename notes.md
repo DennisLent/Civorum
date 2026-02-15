@@ -5,3 +5,7 @@
 - More randomness to coast
 
 - Update world generation to allow for different map types?
+
+## Commands
+
+cargo run -p civorum-core --bin render_debug_map -- standard 1

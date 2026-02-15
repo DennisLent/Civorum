@@ -7,13 +7,6 @@ terrain:
   desert_rain_threshold: 100
   grassland_rain_threshold: 120
 
-landmasses:
-  base_factor: 16
-  base_land_percent: 75
-  fuzzy_flip_percent: 10
-  coast_island_percent: 15
-  smoothing_passes: 2
-
 temperature:
   continental_octaves: 4
   continental_scale: 100.0

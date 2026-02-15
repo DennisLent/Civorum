@@ -1,271 +1,20 @@
-use itertools::izip;
 use noise::{Fbm, MultiFractal, NoiseFn, OpenSimplex};
 use rand_chacha::{
     ChaCha12Rng,
     rand_core::{Rng, SeedableRng},
 };
-use serde::Deserialize;
-use std::{collections::VecDeque, f64::consts::PI, fs, path::PathBuf, sync::OnceLock, vec};
 
-use crate::{map_components::terrain::Terrain, pipeline::map_sizes::MapSizes};
+use std::{collections::VecDeque, f64::consts::PI};
 
-#[derive(Debug, Clone, Deserialize)]
-/// Config for the biome settings being loaded from the yaml file
-struct BiomesConfig {
-    terrain: TerrainThresholds,
-    landmasses: LandmassesConfig,
-    temperature: TemperatureConfig,
-    rainfall: NoiseConfig,
-    heightmap: NoiseConfig,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-/// Config for the terrain settings being loaded from the yaml file
-struct TerrainThresholds {
-    mountain_threshold: f32,
-    hill_threshold: f32,
-    snow_temp_threshold: u8,
-    tundra_temp_threshold: u8,
-    desert_temp_threshold: u8,
-    desert_rain_threshold: u8,
-    grassland_rain_threshold: u8,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-/// Config for landmass settings being loaded from the yaml file
-struct LandmassesConfig {
-    base_factor: usize,
-    base_land_percent: u32,
-    fuzzy_flip_percent: u32,
-    coast_island_percent: u32,
-    smoothing_passes: usize,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-/// Config for temperature settings being loaded from the yaml file
-struct TemperatureConfig {
-    continental_octaves: usize,
-    continental_scale: f64,
-    detail_octaves: usize,
-    detail_scale: f64,
-    continental_weight: f64,
-    detail_weight: f64,
-    base_amplitude: f64,
-    latitude_amp_floor: f64,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-/// Config for noise seetings being loaded from the yaml file
-struct NoiseConfig {
-    octaves: usize,
-    scale: f64,
-}
-
-/// Default implementation of all config settings in case reading fails
-fn default_biomes_config() -> BiomesConfig {
-    BiomesConfig {
-        terrain: TerrainThresholds {
-            mountain_threshold: 0.05,
-            hill_threshold: 0.2,
-            snow_temp_threshold: 40,
-            tundra_temp_threshold: 85,
-            desert_temp_threshold: 150,
-            desert_rain_threshold: 85,
-            grassland_rain_threshold: 155,
-        },
-        landmasses: LandmassesConfig {
-            base_factor: 16,
-            base_land_percent: 6,
-            fuzzy_flip_percent: 4,
-            coast_island_percent: 6,
-            smoothing_passes: 2,
-        },
-        temperature: TemperatureConfig {
-            continental_octaves: 4,
-            continental_scale: 120.0,
-            detail_octaves: 5,
-            detail_scale: 35.0,
-            continental_weight: 0.7,
-            detail_weight: 0.3,
-            base_amplitude: 0.18,
-            latitude_amp_floor: 0.5,
-        },
-        rainfall: NoiseConfig {
-            octaves: 5,
-            scale: 60.0,
-        },
-        heightmap: NoiseConfig {
-            octaves: 5,
-            scale: 40.0,
-        },
-    }
-}
-
-fn config_path() -> PathBuf {
-    if let Ok(path) = std::env::var("CIVORUM_BIOMES_CONFIG") {
-        return PathBuf::from(path);
-    }
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../biomes.yaml")
-}
-
-fn load_biomes_config() -> BiomesConfig {
-    let path = config_path();
-    match fs::read_to_string(&path) {
-        Ok(raw) => match serde_yaml::from_str::<BiomesConfig>(&raw) {
-            Ok(config) => config,
-            Err(err) => {
-                eprintln!(
-                    "Failed to parse biome config at '{}': {err}. Falling back to defaults.",
-                    path.display()
-                );
-                default_biomes_config()
-            }
-        },
-        Err(err) => {
-            eprintln!(
-                "Failed to read biome config at '{}': {err}. Falling back to defaults.",
-                path.display()
-            );
-            default_biomes_config()
-        }
-    }
-}
-
-fn biomes_config() -> &'static BiomesConfig {
-    static CONFIG: OnceLock<BiomesConfig> = OnceLock::new();
-    CONFIG.get_or_init(load_biomes_config)
-}
-
-/// Generate landmasses in three stages
-/// 1. coarse mostly-water seed map
-/// 2. repeated zoom with coast decisions,
-/// 3. hex-neighborhood smoothing passes.
-/// Landmasses are marked as 1, water is marked as 0.
-fn generate_landmasses(seed: u64, size: &MapSizes) -> Vec<u8> {
-    let config = biomes_config();
-    let land_cfg = &config.landmasses;
-    let mut rng = ChaCha12Rng::seed_from_u64(seed);
-    let (width, height) = size.dimensions();
-
-    let mut w = width.div_ceil(land_cfg.base_factor).max(2);
-    let mut h = height.div_ceil(land_cfg.base_factor).max(2);
-    let mut grid = vec![0u8; w * h];
-
-    // Stage 1. coarse seed, mostly water, guaranteed water borders.
-    for y in 0..h {
-        for x in 0..w {
-            let idx = y * w + x;
-            let border = x == 0 || x + 1 == w || y == 0 || y + 1 == h;
-            if border {
-                grid[idx] = 0;
-                continue;
-            }
-
-            let roll = rng.next_u32() % 100;
-            grid[idx] = if roll < land_cfg.base_land_percent {
-                1
-            } else {
-                0
-            };
-        }
-    }
-
-    // Stage 2. repeated 2x
-    while w < width || h < height {
-        let new_w = (w * 2).min(width);
-        let new_h = (h * 2).min(height);
-        let mut next = vec![0u8; new_w * new_h];
-
-        for ny in 0..new_h {
-            for nx in 0..new_w {
-                let px = (nx / 2).min(w - 1);
-                let py = (ny / 2).min(h - 1);
-
-                let pe = (px + 1).min(w - 1);
-                let ps = (py + 1).min(h - 1);
-
-                let parent = grid[py * w + px];
-                let east = grid[py * w + pe];
-                let south = grid[ps * w + px];
-                let diag = grid[ps * w + pe];
-
-                let land_votes = parent + east + south + diag;
-                let mut value = if land_votes > 2 {
-                    1
-                } else if land_votes < 2 {
-                    0
-                } else {
-                    parent
-                };
-
-                let mixed = land_votes > 0 && land_votes < 4;
-                if mixed {
-                    if rng.next_u32() % 100 < land_cfg.fuzzy_flip_percent {
-                        value = 1 - value;
-                    }
-
-                    if value == 0 && rng.next_u32() % 100 < land_cfg.coast_island_percent {
-                        value = 1;
-                    }
-                }
-
-                next[ny * new_w + nx] = value;
-            }
-        }
-
-        for x in 0..new_w {
-            next[x] = 0;
-            next[(new_h - 1) * new_w + x] = 0;
-        }
-        for y in 0..new_h {
-            next[y * new_w] = 0;
-            next[y * new_w + (new_w - 1)] = 0;
-        }
-
-        grid = next;
-        w = new_w;
-        h = new_h;
-    }
-
-    // Stage 3. hex-neighborhood smoothing.
-    for _ in 0..land_cfg.smoothing_passes {
-        let mut next = grid.clone();
-        for y in 0..height {
-            for x in 0..width {
-                let idx = y * width + x;
-                let mut water_neighbors = 0usize;
-                let mut land_neighbors = 0usize;
-
-                for (nx, ny) in neighbors_odd_r(x, y, width, height) {
-                    if grid[ny * width + nx] == 0 {
-                        water_neighbors += 1;
-                    } else {
-                        land_neighbors += 1;
-                    }
-                }
-
-                if water_neighbors >= 4 {
-                    next[idx] = 0;
-                } else if land_neighbors >= 4 {
-                    next[idx] = 1;
-                }
-            }
-        }
-
-        for x in 0..width {
-            next[x] = 0;
-            next[(height - 1) * width + x] = 0;
-        }
-        for y in 0..height {
-            next[y * width] = 0;
-            next[y * width + (width - 1)] = 0;
-        }
-
-        grid = next;
-    }
-
-    grid
-}
+use crate::{
+    map_components::terrain::Terrain,
+    pipeline::{
+        helpers::{NoiseConfig, biomes_config, neighbors_odd_r},
+        land::generate_landmasses,
+        map_sizes::MapSizes,
+        map_types::MapTypes,
+    },
+};
 
 /// Use a seed to generate a temperature distribution.
 /// Temperate varies throughout, but is coldest at the north and south.
@@ -358,56 +107,6 @@ fn generate_random_255(seed: u64, size: &MapSizes, noise_config: &NoiseConfig) -
     }
 
     temp
-}
-
-/// Helper function for Odd-r neighbors for pointy-top hexes
-/// Returns only in-bounds neighbors
-pub fn neighbors_odd_r(x: usize, y: usize, width: usize, height: usize) -> Vec<(usize, usize)> {
-    let p = y & 1;
-
-    let x = x as isize;
-    let y = y as isize;
-    let width = width as isize;
-    let height = height as isize;
-
-    let candidates: [(isize, isize); 6] = if p == 0 {
-        // even row
-        [
-            (x, y - 1),
-            (x + 1, y),
-            (x, y + 1),
-            (x - 1, y + 1),
-            (x - 1, y),
-            (x - 1, y - 1),
-        ]
-    } else {
-        // odd row
-        [
-            (x + 1, y - 1),
-            (x + 1, y),
-            (x + 1, y + 1),
-            (x, y + 1),
-            (x - 1, y),
-            (x, y - 1),
-        ]
-    };
-
-    let mut out = Vec::with_capacity(6);
-
-    for (nx, ny) in candidates {
-        // y must be in-bounds
-        if ny < 0 || ny >= height {
-            continue;
-        }
-
-        if nx < 0 || nx >= width {
-            continue;
-        }
-
-        out.push((nx as usize, ny as usize));
-    }
-
-    out
 }
 
 /// Returns a mask where true is ocean
@@ -595,9 +294,18 @@ fn assign_terrain(
 /// Assigns the respective terrains to each tile
 /// Returns a vec for the terrain, height, hills, temperatire and rain
 pub fn generate_map(seed: &u64, size: &MapSizes) -> (Vec<Terrain>, Vec<u8>, Vec<bool>, Vec<u8>, Vec<u8>) {
+    generate_map_with_type(seed, size, MapTypes::Continents)
+}
+
+/// Same as `generate_map` but allows selecting the landmass map type.
+pub fn generate_map_with_type(
+    seed: &u64,
+    size: &MapSizes,
+    map_type: MapTypes,
+) -> (Vec<Terrain>, Vec<u8>, Vec<bool>, Vec<u8>, Vec<u8>) {
     let config = biomes_config();
     let land_seed = seed.clone();
-    let land = generate_landmasses(land_seed, size);
+    let land = generate_landmasses(land_seed, size, map_type);
 
     let temp_seed = seed + 1;
     let temp = generate_temperature(temp_seed, size);

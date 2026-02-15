@@ -27,3 +27,6 @@ target
 
 # mdBook build output
 /book/build/
+
+# debug maps
+/out

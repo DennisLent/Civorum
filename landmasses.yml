@@ -1,0 +1,286 @@
+global:
+  base_factor: 16
+  max_repair_iters: 6
+  min_lake_size: 4
+  island_max_min: 20
+  island_max_max: 40
+  island_max_divisor: 220
+  mid_max_min: 120
+  mid_max_max: 260
+  mid_max_divisor: 28
+
+continents:
+  draft:
+    base_land_percent: 15
+    fuzzy_flip_percent: 8
+    coast_island_percent: 6
+    smoothing_passes: 2
+    center_bias: 0.0
+  constraints:
+    min_land_ratio: 0.45
+    max_land_ratio: 0.60
+    min_largest_ratio: 0.22
+    max_largest_ratio: 0.50
+    min_components: 3
+    max_components: 7
+    min_islands: 3
+    min_lakes: 1
+    max_lakes: 5
+  repair:
+    largest_carve_trigger_ratio: 0.52
+    largest_carve_target_ratio: 0.45
+    largest_carve_scale: 80.0
+    largest_carve_base_count: 12
+    channel_carve_count: 12
+    island_min_blob: 2
+    island_max_blob: 7
+    island_extra_missing_floor: 2
+    erode_cap_ratio: 0.30
+    pangea_fill_internal_count: 0
+    pangea_connect_count: 0
+    pangea_connect_when_split: 0
+    terra_grow_budget: 0
+    land_ratio_adjust_cap_divisor: 8
+    lake_blob_min: 4
+    lake_blob_max: 8
+
+small_continents:
+  draft:
+    base_land_percent: 8
+    fuzzy_flip_percent: 13
+    coast_island_percent: 9
+    smoothing_passes: 1
+    center_bias: 0.0
+  constraints:
+    min_land_ratio: 0.30
+    max_land_ratio: 0.50
+    min_largest_ratio: 0.0
+    max_largest_ratio: 0.42
+    min_components: 6
+    max_components: 16
+    min_islands: 6
+    min_lakes: 1
+    max_lakes: 6
+  repair:
+    largest_carve_trigger_ratio: 0.42
+    largest_carve_target_ratio: 0.35
+    largest_carve_scale: 85.0
+    largest_carve_base_count: 10
+    channel_carve_count: 14
+    island_min_blob: 2
+    island_max_blob: 5
+    island_extra_missing_floor: 2
+    erode_cap_ratio: 0.30
+    pangea_fill_internal_count: 0
+    pangea_connect_count: 0
+    pangea_connect_when_split: 0
+    terra_grow_budget: 0
+    land_ratio_adjust_cap_divisor: 8
+    lake_blob_min: 4
+    lake_blob_max: 8
+
+island_continents:
+  draft:
+    base_land_percent: 6
+    fuzzy_flip_percent: 16
+    coast_island_percent: 13
+    smoothing_passes: 0
+    center_bias: 0.0
+  constraints:
+    min_land_ratio: 0.20
+    max_land_ratio: 0.38
+    min_largest_ratio: 0.0
+    max_largest_ratio: 0.28
+    min_components: 10
+    max_components: 36
+    min_islands: 12
+    min_lakes: 0
+    max_lakes: 3
+  repair:
+    largest_carve_trigger_ratio: 1.0
+    largest_carve_target_ratio: 1.0
+    largest_carve_scale: 0.0
+    largest_carve_base_count: 0
+    channel_carve_count: 0
+    island_min_blob: 2
+    island_max_blob: 4
+    island_extra_missing_floor: 3
+    erode_cap_ratio: 0.26
+    pangea_fill_internal_count: 0
+    pangea_connect_count: 0
+    pangea_connect_when_split: 0
+    terra_grow_budget: 0
+    land_ratio_adjust_cap_divisor: 8
+    lake_blob_min: 4
+    lake_blob_max: 6
+
+pangea:
+  draft:
+    base_land_percent: 10
+    fuzzy_flip_percent: 4
+    coast_island_percent: 2
+    smoothing_passes: 2
+    center_bias: 0.65
+  constraints:
+    min_land_ratio: 0.38
+    max_land_ratio: 0.52
+    min_largest_ratio: 0.80
+    max_largest_ratio: 1.0
+    min_components: 1
+    max_components: 4
+    min_islands: 1
+    min_lakes: 1
+    max_lakes: 6
+  repair:
+    largest_carve_trigger_ratio: 1.0
+    largest_carve_target_ratio: 1.0
+    largest_carve_scale: 0.0
+    largest_carve_base_count: 0
+    channel_carve_count: 0
+    island_min_blob: 1
+    island_max_blob: 3
+    island_extra_missing_floor: 1
+    erode_cap_ratio: 1.0
+    pangea_fill_internal_count: 16
+    pangea_connect_count: 4
+    pangea_connect_when_split: 3
+    terra_grow_budget: 0
+    land_ratio_adjust_cap_divisor: 8
+    lake_blob_min: 4
+    lake_blob_max: 8
+
+terra:
+  old_world:
+    draft:
+      base_land_percent: 11
+      fuzzy_flip_percent: 6
+      coast_island_percent: 4
+      smoothing_passes: 2
+      center_bias: 0.30
+    constraints:
+      min_land_ratio: 0.40
+      max_land_ratio: 0.58
+      min_largest_ratio: 0.45
+      max_largest_ratio: 0.70
+      min_components: 2
+      max_components: 2
+      min_islands: 0
+      min_lakes: 1
+      max_lakes: 4
+    repair:
+      largest_carve_trigger_ratio: 1.0
+      largest_carve_target_ratio: 1.0
+      largest_carve_scale: 0.0
+      largest_carve_base_count: 0
+      channel_carve_count: 0
+      island_min_blob: 2
+      island_max_blob: 5
+      island_extra_missing_floor: 2
+      erode_cap_ratio: 1.0
+      pangea_fill_internal_count: 0
+      pangea_connect_count: 0
+      pangea_connect_when_split: 0
+      terra_grow_budget: 60
+      land_ratio_adjust_cap_divisor: 8
+      lake_blob_min: 4
+      lake_blob_max: 8
+  new_world:
+    draft:
+      base_land_percent: 8
+      fuzzy_flip_percent: 10
+      coast_island_percent: 9
+      smoothing_passes: 1
+      center_bias: 0.15
+    constraints:
+      min_land_ratio: 0.40
+      max_land_ratio: 0.58
+      min_largest_ratio: 0.45
+      max_largest_ratio: 0.70
+      min_components: 2
+      max_components: 2
+      min_islands: 0
+      min_lakes: 1
+      max_lakes: 4
+    repair:
+      largest_carve_trigger_ratio: 1.0
+      largest_carve_target_ratio: 1.0
+      largest_carve_scale: 0.0
+      largest_carve_base_count: 0
+      channel_carve_count: 0
+      island_min_blob: 2
+      island_max_blob: 5
+      island_extra_missing_floor: 2
+      erode_cap_ratio: 1.0
+      pangea_fill_internal_count: 0
+      pangea_connect_count: 0
+      pangea_connect_when_split: 0
+      terra_grow_budget: 60
+      land_ratio_adjust_cap_divisor: 8
+      lake_blob_min: 4
+      lake_blob_max: 8
+  merged_constraints:
+    min_land_ratio: 0.42
+    max_land_ratio: 0.58
+    min_largest_ratio: 0.45
+    max_largest_ratio: 0.70
+    min_components: 2
+    max_components: 2
+    min_islands: 0
+    min_lakes: 1
+    max_lakes: 4
+  merged_repair:
+    largest_carve_trigger_ratio: 1.0
+    largest_carve_target_ratio: 1.0
+    largest_carve_scale: 0.0
+    largest_carve_base_count: 0
+    channel_carve_count: 0
+    island_min_blob: 2
+    island_max_blob: 5
+    island_extra_missing_floor: 2
+    erode_cap_ratio: 1.0
+    pangea_fill_internal_count: 0
+    pangea_connect_count: 0
+    pangea_connect_when_split: 0
+    terra_grow_budget: 60
+    land_ratio_adjust_cap_divisor: 8
+    lake_blob_min: 4
+    lake_blob_max: 8
+  barrier_min: 3
+  barrier_max: 8
+
+mirror:
+  base:
+    draft:
+      base_land_percent: 9
+      fuzzy_flip_percent: 9
+      coast_island_percent: 6
+      smoothing_passes: 1
+      center_bias: 0.0
+    constraints:
+      min_land_ratio: 0.38
+      max_land_ratio: 0.52
+      min_largest_ratio: 0.25
+      max_largest_ratio: 0.58
+      min_components: 2
+      max_components: 12
+      min_islands: 2
+      min_lakes: 0
+      max_lakes: 5
+    repair:
+      largest_carve_trigger_ratio: 0.58
+      largest_carve_target_ratio: 0.52
+      largest_carve_scale: 60.0
+      largest_carve_base_count: 6
+      channel_carve_count: 4
+      island_min_blob: 2
+      island_max_blob: 4
+      island_extra_missing_floor: 2
+      erode_cap_ratio: 1.0
+      pangea_fill_internal_count: 0
+      pangea_connect_count: 0
+      pangea_connect_when_split: 0
+      terra_grow_budget: 0
+      land_ratio_adjust_cap_divisor: 8
+      lake_blob_min: 4
+      lake_blob_max: 7
+  half_smoothing_passes: 2
