@@ -1,0 +1,6 @@
+id: rich_center
+game: miniciv
+seed: 2
+map: rich_center
+factions: [east, west]
+

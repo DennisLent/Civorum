@@ -1,0 +1,16 @@
+- id: grassland
+  tags: [flat]
+  passable: true
+- id: forest
+  tags: [vegetation]
+  passable: true
+- id: hill
+  tags: [elevated]
+  passable: true
+- id: desert
+  tags: [dry]
+  passable: true
+- id: water
+  tags: [liquid]
+  passable: false
+

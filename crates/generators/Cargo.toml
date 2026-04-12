@@ -1,0 +1,11 @@
+[package]
+name = "civorum-generators"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rand_chacha.workspace = true
+noise = "0.9"
+itertools = "0.14.0"
+serde.workspace = true
+serde_yaml.workspace = true

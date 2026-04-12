@@ -1,0 +1,9 @@
+[package]
+name = "civorum-bots"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+civorum-core = { path = "../core" }
+serde.workspace = true
+

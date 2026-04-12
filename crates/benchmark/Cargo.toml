@@ -1,14 +1,11 @@
 [package]
-name = "civorum-core"
+name = "civorum-benchmark"
 version.workspace = true
 edition.workspace = true
 
 [dependencies]
 civorum-content = { path = "../content" }
-civorum-rules = { path = "../rules" }
-civorum-generators = { path = "../generators" }
+civorum-core = { path = "../core" }
 civorum-replay = { path = "../replay" }
-image = "0.25"
 serde.workspace = true
-thiserror.workspace = true
-uuid.workspace = true
+

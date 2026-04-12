@@ -1,0 +1,13 @@
+- id: move
+  description: Move a unit across the grid.
+- id: attack
+  description: Resolve combat against a legal target.
+- id: found_settlement
+  description: Convert a settler into a city entity.
+- id: harvest_resource
+  description: Collect map resources into faction storage.
+- id: produce_entity
+  description: Queue or spawn a unit from a settlement.
+- id: end_turn
+  description: Finish the active player's turn.
+

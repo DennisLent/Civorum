@@ -1,0 +1,6 @@
+id: island_race
+game: miniciv
+seed: 3
+map: islands
+factions: [blue, red]
+

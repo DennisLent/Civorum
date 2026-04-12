@@ -2,5 +2,5 @@ mod commands;
 mod ui;
 
 fn main() {
-    println!("Civorum CLI skeleton. Try: civorum --help");
+    println!("Civorum benchmark platform scaffold. MiniCiv content lives under content/miniciv.");
 }

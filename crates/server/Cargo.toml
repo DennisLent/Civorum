@@ -1,0 +1,11 @@
+[package]
+name = "civorum-server"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+civorum-benchmark = { path = "../benchmark" }
+civorum-core = { path = "../core" }
+civorum-replay = { path = "../replay" }
+serde.workspace = true
+

@@ -1,0 +1,21 @@
+- id: scout
+  name: Scout
+  tags: [ground, recon]
+  actions: [move, attack, end_turn]
+- id: settler
+  name: Settler
+  tags: [ground, civilian]
+  actions: [move, found_settlement, end_turn]
+- id: warrior
+  name: Warrior
+  tags: [ground, melee]
+  actions: [move, attack, fortify, end_turn]
+- id: worker
+  name: Worker
+  tags: [ground, support]
+  actions: [move, harvest_resource, build_improvement, end_turn]
+- id: archer
+  name: Archer
+  tags: [ground, ranged]
+  actions: [move, attack, fortify, end_turn]
+

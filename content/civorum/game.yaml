@@ -1,0 +1,16 @@
+id: miniciv
+name: MiniCiv
+observation_schema:
+  - visible_map
+  - owned_entities
+  - visible_enemy_entities
+  - resources
+  - turn_number
+  - current_scores
+metrics:
+  - win_rate
+  - final_score
+  - cities_founded
+  - resources_gathered
+  - units_lost
+

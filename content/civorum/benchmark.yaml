@@ -1,0 +1,15 @@
+name: miniciv_starter_v1
+game: miniciv
+scenarios:
+  - duel_open
+  - rich_center
+  - island_race
+seeds: [1, 2, 3, 4, 5]
+max_turns: 200
+metrics:
+  - win_rate
+  - final_score
+  - cities_founded
+  - resources_gathered
+  - units_lost
+

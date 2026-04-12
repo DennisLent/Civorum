@@ -1,10 +1,54 @@
 use std::path::Path;
 
-use civorum_mapgen::pipeline::{map::Map, map_sizes::MapSizes, map_types::MapTypes};
+use civorum_content::{GameDefinition, Scenario};
+use civorum_generators::pipeline::{map::Map, map_sizes::MapSizes, map_types::MapTypes};
+use civorum_replay::ReplayRecord;
+use civorum_rules::RuleSet;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 pub mod debug_render;
 
 pub use debug_render::render_map_png;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct State {
+    pub turn: u32,
+    pub active_player: usize,
+    pub scenario_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Action {
+    pub actor_id: String,
+    pub action_id: String,
+    pub target: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Effect {
+    pub summary: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct EngineContract {
+    pub game: GameDefinition,
+    pub scenario: Scenario,
+    pub rules: RuleSet,
+}
+
+impl EngineContract {
+    pub fn replay_stub(&self, seed: u64) -> ReplayRecord {
+        ReplayRecord {
+            id: Uuid::new_v4(),
+            game_id: self.game.id.clone(),
+            scenario_id: self.scenario.id.clone(),
+            seed,
+            actions: Vec::new(),
+            events: Vec::new(),
+        }
+    }
+}
 
 pub fn render_debug_map(
     seed: Option<u64>,

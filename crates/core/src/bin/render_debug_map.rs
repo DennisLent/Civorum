@@ -1,7 +1,7 @@
 use std::{env, io, path::PathBuf};
 
 use civorum_core::render_debug_map;
-use civorum_mapgen::pipeline::{map_sizes::MapSizes, map_types::MapTypes};
+use civorum_generators::pipeline::{map_sizes::MapSizes, map_types::MapTypes};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();

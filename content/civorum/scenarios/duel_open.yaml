@@ -1,0 +1,6 @@
+id: duel_open
+game: miniciv
+seed: 1
+map: balanced_open
+factions: [north, south]
+

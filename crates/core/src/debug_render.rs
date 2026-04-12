@@ -1,6 +1,6 @@
 use std::{error::Error, fs::create_dir_all, path::Path};
 
-use civorum_mapgen::map_components::terrain::Terrain;
+use civorum_generators::map_components::terrain::Terrain;
 use image::{ImageBuffer, Rgb};
 
 const INV_SQRT3: f32 = 0.57735;

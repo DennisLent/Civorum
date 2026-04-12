@@ -1,0 +1,11 @@
+{
+  "name": "civorum-web-app",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Viewer and benchmark UI scaffold for Civorum.",
+  "scripts": {
+    "dev": "echo \"web scaffold\"",
+    "build": "echo \"build scaffold\""
+  }
+}
+

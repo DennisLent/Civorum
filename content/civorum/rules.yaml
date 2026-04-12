@@ -1,0 +1,13 @@
+primitives:
+  - move
+  - attack
+  - gather
+  - found_settlement
+  - produce_entity
+  - update_visibility
+  - update_score
+victory_conditions:
+  - score_threshold
+  - elimination
+  - turn_limit
+

@@ -1,0 +1,10 @@
+[package]
+name = "civorum-viewer-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+civorum-benchmark = { path = "../benchmark" }
+civorum-replay = { path = "../replay" }
+serde.workspace = true
+

@@ -1,0 +1,10 @@
+[package]
+name = "civorum-rules"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+civorum-content = { path = "../content" }
+serde.workspace = true
+thiserror.workspace = true
+
